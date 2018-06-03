@@ -66,7 +66,7 @@ public:
     return result;
   }
 
-  virtual string info() {
+  string info() {
     stringstream stream;
     stream << fixed << setprecision(0) << course;
     string crs = stream.str();
@@ -89,26 +89,30 @@ class StudentContractor: public Student {
 protected:
   int isPaid = 0;
 
-  virtual int canMoveNextCourse() {
-    return (Student::canMoveNextCourse() && isPaid);
-  }
 public:
   StudentContractor(string fname, string fty, int crs, int rate, int paid): Student(fname, fty, crs, rate) {
     isPaid = paid;
+  }
+
+  virtual int canMoveNextCourse() {
+    return (Student::canMoveNextCourse() && isPaid);
+  }
+
+  virtual string getGrant() {
+    return "0";
   }
 };
 
 
 
 int main(int argc, char const *argv[]) {
-  /// long double rNum1, iNum1, rNum2, iNum2;
   string fullname, faculty;
   int course, minimalRating;
 
-  Student* student = new Student("1", "amm", 1, 4);
+  Student* student = new Student("default pav", "amm", 1, 4);
 
-  StudentContractor* studentContractor1 = new StudentContractor("2", "amm", 1, 4, 0);
-  StudentContractor* studentContractor2 = new StudentContractor("3", "amm", 1, 4, 1);
+  Student* studentContractor1 = new StudentContractor("contractor pav", "amm", 1, 4, 0);
+  Student* studentContractor2 = new StudentContractor("contractor pav paid", "amm", 1, 4, 1);
 
   std::cout << student->info() << '\n';
   std::cout << studentContractor1->info() << '\n';
@@ -122,21 +126,6 @@ int main(int argc, char const *argv[]) {
   std::cout << student->info() << '\n';
   std::cout << studentContractor1->info() << '\n';
   std::cout << studentContractor2->info() << '\n';
-
-  // std::cout << "Write Complex Number (parent real num, parent imaginary num, child real num, child imaginary num):" << '\n';
-  // std::cin >> rNum1 >> iNum1 >> rNum2 >> iNum2;
-  //
-  // Complex* complexParent = new Complex(rNum1, iNum1);
-  // std::cout << "Complex Number Parent Information: " << complexParent->toString() << '\n';
-  //
-  // ComplexMultiplier* complexMultiplier = new ComplexMultiplier(rNum1, iNum1, rNum2, iNum2);
-  // std::cout << "ComplexMultiplier Information: " << complexMultiplier->toString() << '\n';
-
-  //
-  // delete(complexParent);
-  // complexParent = nullptr;
-  // delete(complexMultiplier);
-  // complexMultiplier = nullptr;
 
   return 0;
 }
