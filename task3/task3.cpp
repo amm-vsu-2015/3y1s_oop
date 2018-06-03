@@ -39,10 +39,6 @@ protected:
   int course;
   int minimalRating;
 
-  virtual int canMoveNextCourse() {
-    return (minimalRating >= 3);
-  }
-
 public:
   Student(string fname, string fty, int crs, int rate) {
     fullname = fname;
@@ -51,9 +47,8 @@ public:
     minimalRating = rate;
   }
 
-  // return bool
   virtual void moveNextCourse() {
-    if (canMoveNextCourse()) {
+    if (minimalRating >= 3) {
       course++;
     }
   }
@@ -79,12 +74,12 @@ public:
     stream << fixed << setprecision(0) << course;
     string crs = stream.str();
 
-    stream.str("");
+    stream.str(""); // clear stream
 
     stream << fixed << setprecision(0) << minimalRating;
     string rated = stream.str();
 
-    stream.str("");
+    stream.str(""); // clear stream
 
     stream << fixed << setprecision(0) << getGrant();
     string granted = stream.str();
@@ -102,8 +97,10 @@ public:
     isPaid = paid;
   }
 
-  virtual int canMoveNextCourse() {
-    return (Student::canMoveNextCourse() && isPaid);
+  virtual void moveNextCourse() {
+    if (minimalRating >= 3 && isPaid) {
+      course++;
+    }
   }
 
   virtual string getGrant() {
