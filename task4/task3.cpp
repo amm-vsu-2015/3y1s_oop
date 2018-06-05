@@ -39,7 +39,7 @@ using namespace std;
 
 const int STACK_SIZE = 1024;
 
-enum BracketsType: int { circle = 0, square = 1, braces = 2 };
+enum BracketsType: char { circle = '(', square = '[', braces = '{' };
 
 enum ErrorType: int {
   badClosed, // wrong closing of brackets
@@ -72,12 +72,12 @@ public:
 
   /// Operations /w Stack
 
-  void push(BracketsType type, int index) {
+  void push(BracketsType type, int index) throw(int) {
     if (!isOverflow()) {
       stack[++topIndex] = new Brackets(type, index);
-      std::cout << stack[topIndex]->type << '\n';
     } else {
       cout << "Stack Overflow!" << '\n';
+      throw overflow;
     }
   }
 
@@ -95,23 +95,17 @@ public:
     return (topIndex < 0) ? 1 : 0;
   }
 
-  int isEqualLast(BracketsType type) {
-    std::cout << "equals "<< (stack[topIndex]->type == type)<< ": " << stack[topIndex]->type << " to " << type << '\n';
-    return (stack[topIndex]->type == type);
+  int isEqualLast(BracketsType type) throw(int) {
+      if (isEmpty()) {
+        throw underflow;
+      }
+      return (stack[topIndex]->type == type);
   }
 
   /// Output methods
-  void printLast() {
-    if (!isEmpty()) {
-      cout << "Last item of stack: " << char(stack[topIndex]->type) << '\n';
-    } else {
-      cout << "Stack is empty!" << '\n';
-    }
-  }
-
   void printAll() {
     if (!isEmpty()) {
-      for (int idx_i = 0; idx_i < topIndex; idx_i++) {
+      for (int idx_i = 0; idx_i <= topIndex; idx_i++) {
         cout << char(stack[idx_i]->type);
       }
       cout << '\n';
@@ -121,18 +115,16 @@ public:
   }
 };
 
-
 class Parser {
 private:
   string rawString;
   BracketsStack* bracketsStack;
 
-  // can pop this bracket?
-  // send error state
-  // find brackets -> check type -> add type to stack
-  // enum BracketsType { circle, square, braces };
+  int isOpenBracket(char symbol) {
+    return (symbol == '(' || symbol == '[' || symbol == '{');
+  }
 
-  int canCloseBracket(char symbol) {
+  int canCloseBracket(char symbol) throw(int) {
     // -> last stack type == symbol type
     int canClose = 0;
 
@@ -148,16 +140,6 @@ private:
       break;
     }
 
-    // std::cout << rawString[idx_i] << " -> "<< canCloseBracket(rawString[idx_i]) << '\n';
-    // std::cout << '\n' << '\n';
-
-    std::cout << symbol << " -> "<< canClose << '\n';
-    std::cout << '\n' << '\n';
-
-    if (!canClose) {
-      // throw badClosed;
-    }
-
     return canClose;
   }
 
@@ -165,33 +147,49 @@ private:
     return (symbol == '(' || symbol == ')' || symbol == '[' || symbol == ']' || symbol == '{' || symbol == '}');
   }
 
-  void fillStack() {
-    for (int idx_i = 0; idx_i < rawString.length(); idx_i++) {
-      if (isCorrectSymbol(rawString[idx_i])) {
-        // std::cout << bracketsStack->printLast << '\n';
-        switch (rawString[idx_i]) {
-        case '(':
-          bracketsStack->push(circle, idx_i);
-          break;
-        case '[':
-          bracketsStack->push(square, idx_i);
-          break;
-        case '{':
-          bracketsStack->push(braces, idx_i);
-          break;
+  void checkExpression() {
+    try {
+
+      for (int idx_i = 0; idx_i < rawString.length(); idx_i++) {
+        char currentSymbol = rawString[idx_i];
+
+        if (isCorrectSymbol(currentSymbol)) {
+
+          if (isOpenBracket(currentSymbol)) {
+            pushToStack(currentSymbol, idx_i);
+          } else if (canCloseBracket(currentSymbol)) {
+            popFromStack(currentSymbol, idx_i);
+          }
+
         }
       }
+
+    } catch(int e) {
+      std::cout << "except: " << e << '\n';
+    }
+    // throw(int)
+  }
+
+  void pushToStack(char symbol, int index) throw(int) {
+    switch (symbol) {
+    case '(':
+      bracketsStack->push(circle, index);
+      break;
+    case '[':
+      bracketsStack->push(square, index);
+      break;
+    case '{':
+      bracketsStack->push(braces, index);
+      break;
     }
   }
 
-  void checkExpression() throw (int) {
-    for (int idx_i = 0; idx_i < rawString.length(); idx_i++) {
-      if (isCorrectSymbol(rawString[idx_i])) {
-        bracketsStack->printAll();
-        if (canCloseBracket(rawString[idx_i])) {
-            bracketsStack->pop();
-        }
-      }
+  void popFromStack(char symbol, int index) throw(int) {
+    if (canCloseBracket(symbol)) {
+      bracketsStack->pop();
+    } else {
+      std::cout << "error at: [" << index << "] /w " << symbol << '\n';
+      throw badClosed;
     }
   }
 
@@ -202,7 +200,7 @@ public:
   }
 
   void parse() {
-    fillStack();
+    checkExpression();
   }
 
   void showStack() {
@@ -217,9 +215,9 @@ public:
 
 int main(int argc, char const *argv[]) {
   // Parser* parser = new Parser("129ujasidj1"); // none
-  Parser* parser = new Parser("129ujas{{}{{1}241{}4214{()42}idj1"); // unclosed
+  // Parser* parser = new Parser("129ujas{{}{{1}241{}4214{()42}idj1"); // unclosed
   // Parser* parser = new Parser("129ujas{}{}{}}{1}241{}4214{()42}idj1"); // underflow
-  // Parser* parser = new Parser("129ujas{}{}{}){1}241{}4214{()42}idj1"); // bad closed
+  Parser* parser = new Parser("129ujas{}{}{}){1}241{}4214{()42}idj1"); // bad closed
   // & overflow
   // Parser* parser = new Parser("129ujas{{}{{1}241{}4214{()42}idj1");
   parser->parse();
