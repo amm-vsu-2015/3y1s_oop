@@ -29,24 +29,13 @@
 */
 
 #include <iostream>
-#include <math.h>
 #include <string>
-#include <iomanip>
-#include <sstream>
-#include <exception>
 
 using namespace std;
 
 const int STACK_SIZE = 1024;
 
 enum BracketsType: char { circle = '(', square = '[', braces = '{' };
-
-enum ErrorType: int {
-  badClosed, // wrong closing of brackets
-  unclosed, // catch if user not closed all of brackets
-  overflow, // catch if while stack overflow
-  underflow // catch while trying to pop while stack is empty (may be trying to close not opened brackets)
-};
 
 struct Brackets {
   BracketsType type;
@@ -62,6 +51,7 @@ class BracketsStack {
 private:
   Brackets* stack[STACK_SIZE];
   int topIndex = -1; // is empty by default
+  int isError = 0;
 
   /// Support methods
   int isOverflow() {
@@ -72,12 +62,12 @@ public:
 
   /// Operations /w Stack
 
-  void push(BracketsType type, int index) throw(int) {
+  void push(BracketsType type, int index) {
     if (!isOverflow()) {
       stack[++topIndex] = new Brackets(type, index);
     } else {
       cout << "Stack Overflow!" << '\n';
-      throw overflow;
+      isError = 1;
     }
   }
 
@@ -95,9 +85,15 @@ public:
     return (topIndex < 0) ? 1 : 0;
   }
 
-  int isEqualLast(BracketsType type) throw(int) {
+  int isErrored() {
+    return isError;
+  }
+
+  int isEqualLast(BracketsType type) {
       if (isEmpty()) {
-        throw underflow;
+        cout << "You can't close unopen brackets!" << '\n';
+        isError = 1;
+        return 0;
       }
       return (stack[topIndex]->type == type);
   }
@@ -119,13 +115,13 @@ class Parser {
 private:
   string rawString;
   BracketsStack* bracketsStack;
+  int completedProcess; // string fully parsed
 
   int isOpenBracket(char symbol) {
     return (symbol == '(' || symbol == '[' || symbol == '{');
   }
 
-  int canCloseBracket(char symbol) throw(int) {
-    // -> last stack type == symbol type
+  int canCloseBracket(char symbol) {
     int canClose = 0;
 
     switch (symbol) {
@@ -148,29 +144,29 @@ private:
   }
 
   void checkExpression() {
-    try {
+    completedProcess = false;
+    for (int idx_i = 0; idx_i < rawString.length(); idx_i++) {
+      char currentSymbol = rawString[idx_i];
 
-      for (int idx_i = 0; idx_i < rawString.length(); idx_i++) {
-        char currentSymbol = rawString[idx_i];
+      if (isCorrectSymbol(currentSymbol)) {
 
-        if (isCorrectSymbol(currentSymbol)) {
-
-          if (isOpenBracket(currentSymbol)) {
-            pushToStack(currentSymbol, idx_i);
-          } else if (canCloseBracket(currentSymbol)) {
-            popFromStack(currentSymbol, idx_i);
-          }
-
+        if (isOpenBracket(currentSymbol)) {
+          pushToStack(currentSymbol, idx_i);
+        } else if (canCloseBracket(currentSymbol)) {
+          popFromStack(currentSymbol, idx_i);
         }
       }
 
-    } catch(int e) {
-      std::cout << "except: " << e << '\n';
+      if (bracketsStack->isErrored()) {
+        break;
+      }
     }
-    // throw(int)
+
+    // completedProcess = idx_i == rawString.length() - 1;
+    completedProcess = !bracketsStack->isErrored();
   }
 
-  void pushToStack(char symbol, int index) throw(int) {
+  void pushToStack(char symbol, int index) {
     switch (symbol) {
     case '(':
       bracketsStack->push(circle, index);
@@ -184,18 +180,18 @@ private:
     }
   }
 
-  void popFromStack(char symbol, int index) throw(int) {
+  void popFromStack(char symbol, int index) {
     if (canCloseBracket(symbol)) {
       bracketsStack->pop();
     } else {
-      std::cout << "error at: [" << index << "] /w " << symbol << '\n';
-      throw badClosed;
+      cout << "Bad close! at " << index << '\n';
     }
   }
 
 public:
   Parser(string raw) {
     rawString = raw;
+    completedProcess = false;
     bracketsStack = new BracketsStack();
   }
 
@@ -211,18 +207,30 @@ public:
     cout << rawString << endl;
   }
 
+  int check() {
+    if (!bracketsStack->isEmpty()) {
+      cout << "You didn't close all brackets!" << '\n';
+    }
+
+    return (bracketsStack->isEmpty() && completedProcess);
+  }
+
 };
 
 int main(int argc, char const *argv[]) {
-  // Parser* parser = new Parser("129ujasidj1"); // none
+  // Parser* parser = new Parser("129ujasidj1"); // none / success
   // Parser* parser = new Parser("129ujas{{}{{1}241{}4214{()42}idj1"); // unclosed
   // Parser* parser = new Parser("129ujas{}{}{}}{1}241{}4214{()42}idj1"); // underflow
-  Parser* parser = new Parser("129ujas{}{}{}){1}241{}4214{()42}idj1"); // bad closed
-  // & overflow
-  // Parser* parser = new Parser("129ujas{{}{{1}241{}4214{()42}idj1");
+  // Parser* parser = new Parser("129ujas{}{}{}){1}241{}4214{()42}idj1"); // bad closed
+  Parser* parser = new Parser("129ujas{}{}{}{1}241{}4214{()42}idj1"); // success
   parser->parse();
-  parser->print();
-  parser->showStack();
+
+  if (parser->check()) {
+    cout << "Successful" << '\n';
+  } else {
+    cout << "Failure" << '\n';
+  }
+
   return 0;
 }
 
