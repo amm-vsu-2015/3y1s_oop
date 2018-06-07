@@ -222,7 +222,11 @@ int main(int argc, char const *argv[]) {
   // Parser* parser = new Parser("129ujas{{}{{1}241{}4214{()42}idj1"); // unclosed
   // Parser* parser = new Parser("129ujas{}{}{}}{1}241{}4214{()42}idj1"); // underflow
   // Parser* parser = new Parser("129ujas{}{}{}){1}241{}4214{()42}idj1"); // bad closed
-  Parser* parser = new Parser("129ujas{}{}{}{1}241{}4214{()42}idj1"); // success
+  // Parser* parser = new Parser("129ujas{}{}{}{1}241{}4214{()42}idj1"); // success
+
+  string userString;
+  std::getline(cin, userString);
+  Parser* parser = new Parser(userString); // success
   parser->parse();
 
   if (parser->check()) {
