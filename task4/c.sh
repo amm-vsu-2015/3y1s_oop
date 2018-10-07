@@ -1,10 +1,10 @@
 # alternate compile
-# g++ -o task3 task3.cpp
-# ./task3
+# g++ -o task4 task4.cpp
+# ./task4
 
 # compile and start program
 # exec by
 # $ sh c.sh
 
-c++ task3.cpp -o task3 -std=c++11 -stdlib=libc++
-./task3
+c++ task4.cpp -o task4 -std=c++11 -stdlib=libc++
+./task4
